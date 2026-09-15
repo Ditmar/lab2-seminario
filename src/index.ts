@@ -1,11 +1,14 @@
 import express from "express";
-import taskRoutes from "./routes/task.routes";
+import { createTaskRoutes } from "./routes/task.routes";
+import { InMemoryTaskRepository } from "./repositories/task.repository.memory";
 
 const app = express();
 const PORT = 3000;
 
 app.use(express.json());
-app.use("/tasks", taskRoutes);
+
+const taskRepository = new InMemoryTaskRepository();
+app.use("/tasks", createTaskRoutes(taskRepository));
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
