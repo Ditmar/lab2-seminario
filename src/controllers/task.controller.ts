@@ -1,51 +1,54 @@
 import { Request, Response } from "express";
-import { Task } from "../types/task";
+import { TaskRepository } from "../repositories/task.repository";
 
-let tasks: Task[] = [
-  { id: 1, title: "Aprender patron Repository", done: false },
-  { id: 2, title: "Refactorizar el controller", done: false },
-];
-let nextId = 3;
-
-export const getTasks = (req: Request, res: Response) => {
-  res.json(tasks);
-};
-
-export const getTaskById = (req: Request, res: Response) => {
-  const task = tasks.find((t) => t.id === Number(req.params.id));
-  if (!task) {
-    return res.status(404).json({ message: "Task not found" });
+export class TaskController {
+  constructor(private readonly taskRepository: TaskRepository) {
+    this.getTasks = this.getTasks.bind(this);
+    this.getTaskById = this.getTaskById.bind(this);
+    this.createTask = this.createTask.bind(this);
+    this.updateTask = this.updateTask.bind(this);
+    this.deleteTask = this.deleteTask.bind(this);
   }
-  res.json(task);
-};
 
-export const createTask = (req: Request, res: Response) => {
-  const { title } = req.body;
-  if (!title) {
-    return res.status(400).json({ message: "title is required" });
+  getTasks(req: Request, res: Response) {
+    res.json(this.taskRepository.findAll());
   }
-  const newTask: Task = { id: nextId++, title, done: false };
-  tasks.push(newTask);
-  res.status(201).json(newTask);
-};
 
-export const updateTask = (req: Request, res: Response) => {
-  const task = tasks.find((t) => t.id === Number(req.params.id));
-  if (!task) {
-    return res.status(404).json({ message: "Task not found" });
+  getTaskById(req: Request, res: Response) {
+    const task = this.taskRepository.findById(Number(req.params.id));
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    res.json(task);
   }
-  const { title, done } = req.body;
-  if (title !== undefined) task.title = title;
-  if (done !== undefined) task.done = done;
-  res.json(task);
-};
 
-export const deleteTask = (req: Request, res: Response) => {
-  const id = Number(req.params.id);
-  const exists = tasks.some((t) => t.id === id);
-  if (!exists) {
-    return res.status(404).json({ message: "Task not found" });
+  createTask(req: Request, res: Response) {
+    const { title } = req.body;
+    if (!title) {
+      return res.status(400).json({ message: "title is required" });
+    }
+    const newTask = this.taskRepository.create(title);
+    res.status(201).json(newTask);
   }
-  tasks = tasks.filter((t) => t.id !== id);
-  res.status(204).send();
-};
+
+  updateTask(req: Request, res: Response) {
+    const { title, done } = req.body;
+    const task = this.taskRepository.update(
+      Number(req.params.id),
+      title,
+      done,
+    );
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    res.json(task);
+  }
+
+  deleteTask(req: Request, res: Response) {
+    const deleted = this.taskRepository.delete(Number(req.params.id));
+    if (!deleted) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    res.status(204).send();
+  }
+}
