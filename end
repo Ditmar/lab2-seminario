@@ -1,0 +1,130 @@
+[1mdiff --git a/src/controllers/task.controller.ts b/src/controllers/task.controller.ts[m
+[1mindex 1e34b77..17de0b5 100644[m
+[1m--- a/src/controllers/task.controller.ts[m
+[1m+++ b/src/controllers/task.controller.ts[m
+[36m@@ -1,51 +1,54 @@[m
+ import { Request, Response } from "express";[m
+[31m-import { Task } from "../types/task";[m
+[32m+[m[32mimport { TaskRepository } from "../repositories/task.repository";[m
+ [m
+[31m-let tasks: Task[] = [[m
+[31m-  { id: 1, title: "Aprender patron Repository", done: false },[m
+[31m-  { id: 2, title: "Refactorizar el controller", done: false },[m
+[31m-];[m
+[31m-let nextId = 3;[m
+[32m+[m[32mexport class TaskController {[m
+[32m+[m[32m  constructor(private readonly taskRepository: TaskRepository) {[m
+[32m+[m[32m    this.getTasks = this.getTasks.bind(this);[m
+[32m+[m[32m    this.getTaskById = this.getTaskById.bind(this);[m
+[32m+[m[32m    this.createTask = this.createTask.bind(this);[m
+[32m+[m[32m    this.updateTask = this.updateTask.bind(this);[m
+[32m+[m[32m    this.deleteTask = this.deleteTask.bind(this);[m
+[32m+[m[32m  }[m
+ [m
+[31m-export const getTasks = (req: Request, res: Response) => {[m
+[31m-  res.json(tasks);[m
+[31m-};[m
+[32m+[m[32m  getTasks(req: Request, res: Response) {[m
+[32m+[m[32m    res.json(this.taskRepository.findAll());[m
+[32m+[m[32m  }[m
+ [m
+[31m-export const getTaskById = (req: Request, res: Response) => {[m
+[31m-  const task = tasks.find((t) => t.id === Number(req.params.id));[m
+[31m-  if (!task) {[m
+[31m-    return res.status(404).json({ message: "Task not found" });[m
+[32m+[m[32m  getTaskById(req: Request, res: Response) {[m
+[32m+[m[32m    const task = this.taskRepository.findById(Number(req.params.id));[m
+[32m+[m[32m    if (!task) {[m
+[32m+[m[32m      return res.status(404).json({ message: "Task not found" });[m
+[32m+[m[32m    }[m
+[32m+[m[32m    res.json(task);[m
+   }[m
+[31m-  res.json(task);[m
+[31m-};[m
+ [m
+[31m-export const createTask = (req: Request, res: Response) => {[m
+[31m-  const { title } = req.body;[m
+[31m-  if (!title) {[m
+[31m-    return res.status(400).json({ message: "title is required" });[m
+[32m+[m[32m  createTask(req: Request, res: Response) {[m
+[32m+[m[32m    const { title } = req.body;[m
+[32m+[m[32m    if (!title) {[m
+[32m+[m[32m      return res.status(400).json({ message: "title is required" });[m
+[32m+[m[32m    }[m
+[32m+[m[32m    const newTask = this.taskRepository.create(title);[m
+[32m+[m[32m    res.status(201).json(newTask);[m
+   }[m
+[31m-  const newTask: Task = { id: nextId++, title, done: false };[m
+[31m-  tasks.push(newTask);[m
+[31m-  res.status(201).json(newTask);[m
+[31m-};[m
+ [m
+[31m-export const updateTask = (req: Request, res: Response) => {[m
+[31m-  const task = tasks.find((t) => t.id === Number(req.params.id));[m
+[31m-  if (!task) {[m
+[31m-    return res.status(404).json({ message: "Task not found" });[m
+[32m+[m[32m  updateTask(req: Request, res: Response) {[m
+[32m+[m[32m    const { title, done } = req.body;[m
+[32m+[m[32m    const task = this.taskRepository.update([m
+[32m+[m[32m      Number(req.params.id),[m
+[32m+[m[32m      title,[m
+[32m+[m[32m      done,[m
+[32m+[m[32m    );[m
+[32m+[m[32m    if (!task) {[m
+[32m+[m[32m      return res.status(404).json({ message: "Task not found" });[m
+[32m+[m[32m    }[m
+[32m+[m[32m    res.json(task);[m
+   }[m
+[31m-  const { title, done } = req.body;[m
+[31m-  if (title !== undefined) task.title = title;[m
+[31m-  if (done !== undefined) task.done = done;[m
+[31m-  res.json(task);[m
+[31m-};[m
+ [m
+[31m-export const deleteTask = (req: Request, res: Response) => {[m
+[31m-  const id = Number(req.params.id);[m
+[31m-  const exists = tasks.some((t) => t.id === id);[m
+[31m-  if (!exists) {[m
+[31m-    return res.status(404).json({ message: "Task not found" });[m
+[32m+[m[32m  deleteTask(req: Request, res: Response) {[m
+[32m+[m[32m    const deleted = this.taskRepository.delete(Number(req.params.id));[m
+[32m+[m[32m    if (!deleted) {[m
+[32m+[m[32m      return res.status(404).json({ message: "Task not found" });[m
+[32m+[m[32m    }[m
+[32m+[m[32m    res.status(204).send();[m
+   }[m
+[31m-  tasks = tasks.filter((t) => t.id !== id);[m
+[31m-  res.status(204).send();[m
+[31m-};[m
+[32m+[m[32m}[m
+[1mdiff --git a/src/routes/task.routes.ts b/src/routes/task.routes.ts[m
+[1mindex bc269d5..e315260 100644[m
+[1m--- a/src/routes/task.routes.ts[m
+[1m+++ b/src/routes/task.routes.ts[m
+[36m@@ -1,18 +1,14 @@[m
+ import { Router } from "express";[m
+[31m-import {[m
+[31m-  getTasks,[m
+[31m-  getTaskById,[m
+[31m-  createTask,[m
+[31m-  updateTask,[m
+[31m-  deleteTask,[m
+[31m-} from "../controllers/task.controller";[m
+[32m+[m[32mimport { TaskController } from "../controllers/task.controller";[m
+[32m+[m[32mimport { InMemoryTaskRepository } from "../repositories/in-memory-task.repository";[m
+ [m
+ const router = Router();[m
+[32m+[m[32mconst taskController = new TaskController(new InMemoryTaskRepository());[m
+ [m
+[31m-router.get("/", getTasks);[m
+[31m-router.get("/:id", getTaskById);[m
+[31m-router.post("/", createTask);[m
+[31m-router.put("/:id", updateTask);[m
+[31m-router.delete("/:id", deleteTask);[m
+[32m+[m[32mrouter.get("/", taskController.getTasks);[m
+[32m+[m[32mrouter.get("/:id", taskController.getTaskById);[m
+[32m+[m[32mrouter.post("/", taskController.createTask);[m
+[32m+[m[32mrouter.put("/:id", taskController.updateTask);[m
+[32m+[m[32mrouter.delete("/:id", taskController.deleteTask);[m
+ [m
+ export default router;[m
