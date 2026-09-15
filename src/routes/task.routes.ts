@@ -1,13 +1,18 @@
 import { Router } from "express";
-import {
+import { createTaskController } from "../controllers/task.controller";
+import { InMemoryTaskRepository } from "../repositories/InMemoryTaskRepository";
+
+const router = Router();
+
+const repository = new InMemoryTaskRepository();
+
+const {
   getTasks,
   getTaskById,
   createTask,
   updateTask,
   deleteTask,
-} from "../controllers/task.controller";
-
-const router = Router();
+} = createTaskController(repository);
 
 router.get("/", getTasks);
 router.get("/:id", getTaskById);
