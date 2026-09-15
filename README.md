@@ -6,6 +6,7 @@ API simple de tareas construida con TypeScript y Express.
 
 ```
 npm install
+npm run build
 npm run dev
 ```
 
