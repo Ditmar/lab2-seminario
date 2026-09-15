@@ -1,51 +1,54 @@
 import { Request, Response } from "express";
-import { Task } from "../types/task";
+import { TaskRepository } from "../repositories/task.repository";
 
-let tasks: Task[] = [
-  { id: 1, title: "Aprender patron Repository", done: false },
-  { id: 2, title: "Refactorizar el controller", done: false },
-];
-let nextId = 3;
+export class TaskController {
+  constructor(private repository: TaskRepository) {}
 
-export const getTasks = (req: Request, res: Response) => {
-  res.json(tasks);
-};
+  getTasks = async (_req: Request, res: Response): Promise<void> => {
+    res.json(await this.repository.getAll());
+  };
 
-export const getTaskById = (req: Request, res: Response) => {
-  const task = tasks.find((t) => t.id === Number(req.params.id));
-  if (!task) {
-    return res.status(404).json({ message: "Task not found" });
-  }
-  res.json(task);
-};
+  getTaskById = async (req: Request, res: Response): Promise<void> => {
+    const task = await this.repository.getById(Number(req.params.id));
+    if (!task) {
+      res.status(404).json({ message: "Task not found" });
+      return;
+    }
+    res.json(task);
+  };
 
-export const createTask = (req: Request, res: Response) => {
-  const { title } = req.body;
-  if (!title) {
-    return res.status(400).json({ message: "title is required" });
-  }
-  const newTask: Task = { id: nextId++, title, done: false };
-  tasks.push(newTask);
-  res.status(201).json(newTask);
-};
+  createTask = async (req: Request, res: Response): Promise<void> => {
+    const { title } = req.body;
+    if (!title) {
+      res.status(400).json({ message: "title is required" });
+      return;
+    }
 
-export const updateTask = (req: Request, res: Response) => {
-  const task = tasks.find((t) => t.id === Number(req.params.id));
-  if (!task) {
-    return res.status(404).json({ message: "Task not found" });
-  }
-  const { title, done } = req.body;
-  if (title !== undefined) task.title = title;
-  if (done !== undefined) task.done = done;
-  res.json(task);
-};
+    const task = await this.repository.create(title);
+    res.status(201).json(task);
+  };
 
-export const deleteTask = (req: Request, res: Response) => {
-  const id = Number(req.params.id);
-  const exists = tasks.some((t) => t.id === id);
-  if (!exists) {
-    return res.status(404).json({ message: "Task not found" });
-  }
-  tasks = tasks.filter((t) => t.id !== id);
-  res.status(204).send();
-};
+  updateTask = async (req: Request, res: Response): Promise<void> => {
+    const { title, done } = req.body;
+    const task = await this.repository.update(
+      Number(req.params.id),
+      title,
+      done
+    );
+
+    if (!task) {
+      res.status(404).json({ message: "Task not found" });
+      return;
+    }
+    res.json(task);
+  };
+
+  deleteTask = async (req: Request, res: Response): Promise<void> => {
+    const deleted = await this.repository.delete(Number(req.params.id));
+    if (!deleted) {
+      res.status(404).json({ message: "Task not found" });
+      return;
+    }
+    res.status(204).send();
+  };
+}
